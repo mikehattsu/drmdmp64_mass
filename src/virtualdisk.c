@@ -514,7 +514,7 @@ int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void* buf,
                           CICString = NTSC;
                         }
 
-                        sprintf(buf,
+                        int utf16fix = sprintf(buf,
                         "\nCart tester report:\n\n"
                         "    EEPROM     - %s\n"
                         "    SRAM       - %s\n"
@@ -538,6 +538,9 @@ int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void* buf,
                         ((gGameCode[2] >> 8) & 0xFF),
                         (gGameCode[2] & 0xFF)
                         );
+                        if (utf16fix % 2 != 0) {
+                          memset(buf + utf16fix, 0x20, 1);
+                        };
                       } else {
                         memset(buf, 0, SECTOR_SIZE);
                       }
