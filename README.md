@@ -26,7 +26,7 @@ cmake --build .
 How to update the firmware:
 ```
 Hold the bootsel button down while connecting USB to PC.
-Copy ouDrmDmp64_mass.uf2 to the RPI-RP2 drive that shows up.
+Copy uoDrmDmp64_mass.uf2 to the RPI-RP2 drive that shows up.
 Wait for the device to reboot.
 ```
 
