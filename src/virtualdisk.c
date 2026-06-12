@@ -283,10 +283,6 @@ void init_dir_entry(struct dir_entry *entry, const char *fn, const char *uniname
     memcpy(lfnentry->fileName_Part1, uniname, sizeof(lfnentry->fileName_Part1));
     memcpy(lfnentry->fileName_Part2, uniname + sizeof(lfnentry->fileName_Part1), sizeof(lfnentry->fileName_Part2));
     memcpy(lfnentry->fileName_Part3, uniname + sizeof(lfnentry->fileName_Part1) + sizeof(lfnentry->fileName_Part2), sizeof(lfnentry->fileName_Part3));
-    if (lfnentry->fileName_Part3[0] == 0) {
-      lfnentry->fileName_Part3[3] = 0xFF;
-      lfnentry->fileName_Part3[2] = 0xFF;
-    }
     entry++;
     entry->creation_time_frac = RASPBERRY_PI_TIME_FRAC;
     entry->creation_time = RASPBERRY_PI_TIME;
@@ -431,7 +427,7 @@ int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void* buf,
                     uint32_t size = 2 * 1024;
                     assert(cluster_offset == (EEPROM_CLUSTER_START + 2));
                     if (gEepromSize != 0) {
-                      init_dir_entry(++entries, "ROM     EEP", "R\0O\0M\0.\0e\0e\0p\0\0\0\0\0\0\0\0\0\0", cluster_offset, gEepromSize, 0);
+                      init_dir_entry(++entries, "ROM     EEP", "R\0O\0M\0.\0e\0e\0p\0\0\0\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF", cluster_offset, gEepromSize, 0);
                       entries++;
                     }
 
@@ -439,20 +435,20 @@ int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void* buf,
                     assert(cluster_offset == (FLASHRAM_CLUSTER_START + 2));
                     size = 128 * 1024;
                     if ((gSRAMPresent != false) || (gFramPresent != false)) {
-                      init_dir_entry(++entries, "ROM     FLA", "R\0O\0M\0.\0f\0l\0a\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", cluster_offset, size, 0); // DaisyDrive64 doesn't differentiate between SRAM and FRAM for filenames.
+                      init_dir_entry(++entries, "ROM     FLA", "R\0O\0M\0.\0f\0l\0a\0\0\0\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF", cluster_offset, size, 0); // DaisyDrive64 doesn't differentiate between SRAM and FRAM for filenames.
                       entries++;
                     }
 
                     cluster_offset += size / CLUSTER_SIZE;
                     size = (64 * 1024 * 1024);
                     assert(cluster_offset == (N64ROM_CLUSTER_START + 2));
-                    init_dir_entry(++entries, "ROM     N64", "R\0O\0M\0.\0n\0""6\0""4\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", cluster_offset, gRomSize, ATTR_READONLY);
+                    init_dir_entry(++entries, "ROM     N64", "R\0O\0M\0.\0n\0""6\0""4\0\0\0\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF", cluster_offset, gRomSize, ATTR_READONLY);
                     entries++;
 
                     cluster_offset += size / CLUSTER_SIZE;
                     size = (64 * 1024 * 1024);
                     assert(cluster_offset == (Z64ROM_CLUSTER_START + 2));
-                    init_dir_entry(++entries, "ROMF    Z64", "R\0O\0M\0F\0.\0z\0""6\0""4\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", cluster_offset, gRomSize, ATTR_READONLY); // Same as N64 just byteflipped.
+                    init_dir_entry(++entries, "ROMF    Z64", "R\0O\0M\0F\0.\0z\0""6\0""4\0\0\0\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF", cluster_offset, gRomSize, ATTR_READONLY); // Same as N64 just byteflipped.
                     entries++;
 
                     cluster_offset += size / CLUSTER_SIZE;
@@ -460,9 +456,9 @@ int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void* buf,
                     assert(cluster_offset == (FLASHRAMFLIP_CLUSTER_START + 2));
                     if ((gSRAMPresent != false) || (gFramPresent != false)) {
                       if (gFramPresent != false) {
-                        init_dir_entry(++entries, "ROMF    FLA", "R\0O\0M\0F\0.\0f\0l\0a\0s\0h\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0" , cluster_offset, size, 0); // Same as N64 just byteflipped, fla for Ares emulator support.
+                        init_dir_entry(++entries, "ROMF    FLA", "R\0O\0M\0F\0.\0f\0l\0a\0s\0h\0\0\0\xFF\xFF\xFF\xFF" , cluster_offset, size, 0); // Same as N64 just byteflipped, fla for Ares emulator support.
                       } else {
-                        init_dir_entry(++entries, "ROMF    RAM", "R\0O\0M\0F\0.\0r\0a\0m\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", cluster_offset, size, 0); // Same as N64 just byteflipped, ram for Ares emulator support.
+                        init_dir_entry(++entries, "ROMF    RAM", "R\0O\0M\0F\0.\0r\0a\0m\0\0\0\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF", cluster_offset, size, 0); // Same as N64 just byteflipped, ram for Ares emulator support.
                       }
                       entries++;
                     }
@@ -471,14 +467,14 @@ int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void* buf,
                     size = 2 * 1024;
                     assert(cluster_offset == (EEPROMFLIP_CLUSTER_START + 2));
                     if (gEepromSize != 0) {
-                      init_dir_entry(++entries, "ROMF    EEP", "R\0O\0M\0F\0.\0e\0e\0p\0r\0o\0m\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", cluster_offset, gEepromSize, 0);
+                      init_dir_entry(++entries, "ROMF    EEP", "R\0O\0M\0F\0.\0e\0e\0p\0r\0o\0m\0\0\0\xFF\xFF", cluster_offset, gEepromSize, 0);
                       entries++;
                     }
 
                     cluster_offset += (size / CLUSTER_SIZE) + 1;
                     size = 2 * 1024;
                     assert(cluster_offset == (CARTTEST_CLUSTER_START + 2));
-                    init_dir_entry(++entries, "CARTTESTTXT", "C\0a\0r\0t\0T\0e\0s\0t\0.\0t\0x\0t\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", cluster_offset, size, ATTR_READONLY);
+                    init_dir_entry(++entries, "CARTTESTTXT", "C\0a\0r\0t\0T\0e\0s\0t\0.\0t\0x\0t\0\0\0", cluster_offset, size, ATTR_READONLY);
                     entries++;
                 } else {
                   memset(buf, 0, buf_size);
