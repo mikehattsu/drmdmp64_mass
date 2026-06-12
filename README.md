@@ -21,11 +21,16 @@ mkdir build
 cd build
 cmake ..
 cmake --build .
-(optional) put pico in bootloader mode and copy the drmdmp64_mass.uf to the attached drive.
+```
+
+How to update the firmware:
+```
+Hold the bootsel button down while connecting USB to PC.
+Copy ouDrmDmp64_mass.uf2 to the RPI-RP2 drive that shows up.
+Wait for the device to reboot.
 ```
 
 How to use:
-
 ```
 1. Insert cartridge into the cartridge slot.
 2. Connect USB to PC.
