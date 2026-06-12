@@ -580,7 +580,7 @@ int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void* buf,
                         } else if (gCICType == CIC_TYPE_NTSC) {
                           CICString = NTSC;
                         }
-						int utf16fix = 0;
+                        int utf16fix = 0;
                         if (gCICType == CIC_TYPE_INVALID) {
                           utf16fix = sprintf(buf,
                           "\nMH Firmware 20260612"
@@ -612,7 +612,7 @@ int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void* buf,
                           ((gGameCode[2] >> 8) & 0xFF),
                           (gGameCode[2] & 0xFF)
                           );
-						} else {
+                        } else {
                           utf16fix = sprintf(buf,
                           "\nMH Firmware 20260612"
                           "\nCart tester report:\n\n"
