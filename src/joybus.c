@@ -55,7 +55,7 @@ void __time_critical_func(InitEepromClock)(uint clockpin)
 
     pio_gpio_init(pio_1, clockpin);
 
-    uint offset_1 = pio_add_program(pio_1, &joybus_program);
+    uint offset_1 = (uint)pio_add_program(pio_1, &joybus_program);
     pio_sm_config config1 = joybus_program_get_default_config(offset_1);
     //sm_config_set_out_pins(&config1, clockpin, 1);
     sm_config_set_set_pins(&config1, clockpin, 1);
@@ -101,7 +101,7 @@ void __time_critical_func(InitEeprom)(uint dataPin)
 
     pio_gpio_init(pio, dataPin);
 
-    piooffset = pio_add_program(pio, &joybus_program);
+    piooffset = (uint)pio_add_program(pio, &joybus_program);
     config = joybus_program_get_default_config(piooffset);
     sm_config_set_in_pins(&config, dataPin);
     sm_config_set_out_pins(&config, dataPin, 1);
