@@ -48,7 +48,7 @@ uint32_t gChecksum;
 const char* gCICName;
 bool gGpioRemap = false;
 
-void set_ad_input() {
+static void set_ad_input() {
     for(uint32_t i = 0; i < 16; i++) {
         gpio_init(i);
         gpio_set_dir(i, GPIO_IN);
@@ -57,7 +57,7 @@ void set_ad_input() {
     gpio_is_output = 0;
 }
 
-void set_ad_output() {
+static void set_ad_output() {
     for(uint32_t i = 0; i < 16; i++) {
         gpio_init(i);
         gpio_set_dir(i, GPIO_OUT);
@@ -68,7 +68,7 @@ void set_ad_output() {
 
 uint32_t CrcTable[256];
 bool TableBuilt = false;
-uint32_t si_crc32(const uint8_t *data, size_t size) {
+static uint32_t si_crc32(const uint8_t *data, size_t size) {
     unsigned n, k;
     uint32_t c;
 
@@ -421,7 +421,7 @@ void write16(uint16_t value)
     gpio_put(N64_WRITE, true);
 }
 
-void FlashRamEraseBlock128B(uint32_t offset)
+static void FlashRamEraseBlock128B(uint32_t offset)
 {
     // Set erase address.
     set_address(0x08000000 + 0x10000);

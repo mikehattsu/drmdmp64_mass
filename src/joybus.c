@@ -26,7 +26,7 @@
 uint32_t ReadCount = 0;
 uint32_t gEepromSize = 0;
 
-void __time_critical_func(convertToPio)(const uint8_t* command, const int len, uint32_t* result, int* resultLen) {
+static void __time_critical_func(convertToPio)(const uint8_t* command, const int len, uint32_t* result, int* resultLen) {
     if (len == 0) {
         *resultLen = 0;
         return;
@@ -67,7 +67,7 @@ void __time_critical_func(InitEepromClock)(uint clockpin)
     pio_sm_set_enabled(pio_1, 1, true);
 }
 
-uint32_t GetInputWithTimeout(void)
+static uint32_t GetInputWithTimeout(void)
 {
     uint32_t lastWriteTime = time_us_32();
     while (1) {

@@ -257,7 +257,7 @@ bool tud_msc_start_stop_cb(uint8_t lun, uint8_t power_condition, bool start, boo
   return true;
 }
 
-unsigned char ChkSum (const unsigned char *pFcbName)
+static unsigned char ChkSum (const unsigned char *pFcbName)
 {
   short FcbNameLen;
   unsigned char Sum;
@@ -275,7 +275,7 @@ unsigned char ChkSum (const unsigned char *pFcbName)
   return (Sum);
 }
 
-void init_dir_entry(struct dir_entry *entry, const char *fn, const char *uniname, uint32_t cluster, uint len, uint8_t attribute) {
+static void init_dir_entry(struct dir_entry *entry, const char *fn, const char *uniname, uint32_t cluster, uint len, uint8_t attribute) {
     LFN *lfnentry = (LFN*)entry;
     memset(lfnentry, 0, sizeof(LFN));
     lfnentry->sequenceNo = 0x41;
@@ -302,7 +302,7 @@ static struct {
     bool serial_number_valid;
 } boot_device_state;
 
-uint32_t msc_get_serial_number32() {
+static uint32_t msc_get_serial_number32() {
     if (!boot_device_state.serial_number_valid) {
         boot_device_state.serial_number32 = time_us_32();
         boot_device_state.serial_number_valid = true;
