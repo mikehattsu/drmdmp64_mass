@@ -580,39 +580,72 @@ int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void* buf,
                         } else if (gCICType == CIC_TYPE_NTSC) {
                           CICString = NTSC;
                         }
-
-                        int utf16fix = sprintf(buf,
-                        "\nMH Firmware 20260612"
-                        "\nCart tester report:\n\n"
-                        "    EEPROM      - %s\n"
-                        "    SRAM        - %s\n"
-                        "    FlashRam    - %s (%02X)\n"
-                        "    CIC         - %s %s\n"
-                        "    Romsize     - %luMB\n"
-                        "    RomName     - %s\n"
-                        "    ProductCode - %c%c%c%c\n"
-                        "    RomID       - %04X %c%c\n"
-                        "    CartType    - %c\n"
-                        "    RomRegion   - %c\n"
-                        "    RomVersion  - %02X\n\n\n"
-						"To write saves it is best to use\n"
-						"type cmd in Windows and cat in Linux\n\n"
-						"Examples:\n"
-						"type c:\\path\\n64.eep > x:\\n64.eep\n"
-						"cat /path/n64.eep > /media/DreamDump64/n64.eep\n",
-                        EepString,
-                        (gSRAMPresent != 0) ? OK : NotPresent,
-                        (gFramPresent != 0) ? OK : NotPresent, gFlashType,
-                        CICString,
-                        gCICName,
-                        (gRomSize / (1024 * 1024)),
-                        (char*)gGameTitle,
-                        gGameCode[0] & 0xFF, ((gGameCode[1] >> 8) & 0xFF), (gGameCode[1] & 0xFF), ((gGameCode[2] >> 8) & 0xFF),
-                        gGameCode[1], ((gGameCode[1] >> 8) & 0xFF), (gGameCode[1] & 0xFF),
-                        gGameCode[0] & 0xFF,
-                        ((gGameCode[2] >> 8) & 0xFF),
-                        (gGameCode[2] & 0xFF)
-                        );
+						int utf16fix = 0;
+                        if (gCICType == CIC_TYPE_INVALID) {
+                          utf16fix = sprintf(buf,
+                          "\nMH Firmware 20260612"
+                          "\nCart tester report:\n\n"
+                          "    EEPROM      - %s\n"
+                          "    SRAM        - %s\n"
+                          "    FlashRam    - %s (%02X)\n"
+                          "    CIC         - %s %s\n"
+                          "    Romsize     - %luMB\n"
+                          "    RomName     - %s\n"
+                          "    ProductCode - %c%c%c%c\n"
+                          "    RomID       - %04X %c%c\n"
+                          "    CartType    - %c\n"
+                          "    RomRegion   - %c\n"
+                          "    RomVersion  - %02X\n\n\n"
+                          "CIC and EEPROM might need a fix\n"
+                          "Check here for more info:\n"
+                          "https://github.com/mikehattsu/drmdmp64_mass\n",
+                          EepString,
+                          (gSRAMPresent != 0) ? OK : NotPresent,
+                          (gFramPresent != 0) ? OK : NotPresent, gFlashType,
+                          CICString,
+                          gCICName,
+                          (gRomSize / (1024 * 1024)),
+                          (char*)gGameTitle,
+                          gGameCode[0] & 0xFF, ((gGameCode[1] >> 8) & 0xFF), (gGameCode[1] & 0xFF), ((gGameCode[2] >> 8) & 0xFF),
+                          gGameCode[1], ((gGameCode[1] >> 8) & 0xFF), (gGameCode[1] & 0xFF),
+                          gGameCode[0] & 0xFF,
+                          ((gGameCode[2] >> 8) & 0xFF),
+                          (gGameCode[2] & 0xFF)
+                          );
+						} else {
+                          utf16fix = sprintf(buf,
+                          "\nMH Firmware 20260612"
+                          "\nCart tester report:\n\n"
+                          "    EEPROM      - %s\n"
+                          "    SRAM        - %s\n"
+                          "    FlashRam    - %s (%02X)\n"
+                          "    CIC         - %s %s\n"
+                          "    Romsize     - %luMB\n"
+                          "    RomName     - %s\n"
+                          "    ProductCode - %c%c%c%c\n"
+                          "    RomID       - %04X %c%c\n"
+                          "    CartType    - %c\n"
+                          "    RomRegion   - %c\n"
+                          "    RomVersion  - %02X\n\n\n"
+                          "To write saves it is best to use\n"
+                          "type cmd in Windows and cat in Linux\n\n"
+                          "Examples:\n"
+                          "type c:\\path\\n64.eep > x:\\n64.eep\n"
+                          "cat /path/n64.eep > /media/DreamDump64/n64.eep\n",
+                          EepString,
+                          (gSRAMPresent != 0) ? OK : NotPresent,
+                          (gFramPresent != 0) ? OK : NotPresent, gFlashType,
+                          CICString,
+                          gCICName,
+                          (gRomSize / (1024 * 1024)),
+                          (char*)gGameTitle,
+                          gGameCode[0] & 0xFF, ((gGameCode[1] >> 8) & 0xFF), (gGameCode[1] & 0xFF), ((gGameCode[2] >> 8) & 0xFF),
+                          gGameCode[1], ((gGameCode[1] >> 8) & 0xFF), (gGameCode[1] & 0xFF),
+                          gGameCode[0] & 0xFF,
+                          ((gGameCode[2] >> 8) & 0xFF),
+                          (gGameCode[2] & 0xFF)
+                          );
+                        };
                         if (utf16fix % 2 != 0) {
                           memset(buf + utf16fix, 0x0A, 1);
                         }
