@@ -9,7 +9,7 @@ set(CMAKE_BUILD_TYPE Debug)
 include(${CMAKE_CURRENT_SOURCE_DIR}/external/tinyusb/hw/bsp/family_support.cmake)
 
 # gets PROJECT name for the example (e.g. <BOARD>-<DIR_NAME>)
-family_get_project_name(PROJECT DrmDmp64_mass)
+family_get_project_name(PROJECT uoDrmDmp64_mass)
 
 project(${PROJECT} C CXX ASM)
 
