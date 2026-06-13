@@ -6,7 +6,7 @@
  * Exposes the EEPROM, FlashRam, SRAM and catridge ROM as a file on a mass storage device.
  * Z64 are the byteflipped equivalents of the same data as the N64.
  * Filenames are separate to allow direct interaction with emulators and the savegames based on byteflipping modes.
- * Filenames are now N<ProductCode>.* for N64 format and Z<ProductCode>.* for Z64 format.
+ * Filenames are now V<ProductCode>.* for V64 format and Z<ProductCode>.* for Z64 format.
  * Z<ProductCode>.Z64 will also have Z<ProductCode>.eeprom and Z<ProductCode>.flash flipped the same way as the .Z64.
  * The Z<ProductCode>.* files should work with Ares.
  */
@@ -428,12 +428,12 @@ int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void* buf,
                     uint32_t size = 2 * 1024;
                     assert(cluster_offset == (EEPROM_CLUSTER_START + 2));
                     if (gEepromSize != 0) {
-                      char name83ne[] = "NROMF   EEP";
+                      char name83ne[] = "VROMF   EEP";
                       name83ne[1] = (char)gGameCode[0] & 0xFF;
                       name83ne[2] = (char)((gGameCode[1] >> 8) & 0xFF);
                       name83ne[3] = (char)(gGameCode[1] & 0xFF);
                       name83ne[4] = (char)((gGameCode[2] >> 8) & 0xFF);
-                      char nameLongne[] = "N\0R\0O\0M\0F\0.\0e\0e\0p\0\0\0\xFF\xFF\xFF\xFF\xFF\xFF";
+                      char nameLongne[] = "V\0R\0O\0M\0F\0.\0e\0e\0p\0\0\0\xFF\xFF\xFF\xFF\xFF\xFF";
                       nameLongne[2] = (char)gGameCode[0] & 0xFF;
                       nameLongne[4] = (char)((gGameCode[1] >> 8) & 0xFF);
                       nameLongne[6] = (char)(gGameCode[1] & 0xFF);
@@ -446,29 +446,35 @@ int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void* buf,
                     assert(cluster_offset == (FLASHRAM_CLUSTER_START + 2));
                     size = 128 * 1024;
                     if ((gSRAMPresent != false) || (gFramPresent != false)) {
-                      char name83nf[] = "NROMF   FLA";
+                      char name83nf[] = "VROMF   FLA";
                       name83nf[1] = (char)gGameCode[0] & 0xFF;
                       name83nf[2] = (char)((gGameCode[1] >> 8) & 0xFF);
                       name83nf[3] = (char)(gGameCode[1] & 0xFF);
                       name83nf[4] = (char)((gGameCode[2] >> 8) & 0xFF);
-                      char nameLongnf[] = "N\0R\0O\0M\0F\0.\0f\0l\0a\0\0\0\xFF\xFF\xFF\xFF\xFF\xFF";
+                      char nameLongnf[] = "V\0R\0O\0M\0F\0.\0f\0l\0a\0\0\0\xFF\xFF\xFF\xFF\xFF\xFF";
                       nameLongnf[2] = (char)gGameCode[0] & 0xFF;
                       nameLongnf[4] = (char)((gGameCode[1] >> 8) & 0xFF);
                       nameLongnf[6] = (char)(gGameCode[1] & 0xFF);
                       nameLongnf[8] = (char)((gGameCode[2] >> 8) & 0xFF);
-                      init_dir_entry(++entries, name83nf, nameLongnf, cluster_offset, size, 0); // DaisyDrive64 doesn't differentiate between SRAM and FRAM for filenames.
+                      if (gFramPresent != false) {
+                        init_dir_entry(++entries, name83nf, nameLongnf, cluster_offset, size, 0);
+                      } else if (((gGameCode[1] >> 8) & 0xFF) == 0x44 && (gGameCode[1] & 0xFF) == 0x5A ) {
+                        init_dir_entry(++entries, name83nf, nameLongnf, cluster_offset, size / 4 * 3, 0);
+                      } else {
+                        init_dir_entry(++entries, name83nf, nameLongnf, cluster_offset, size / 4, 0);
+                      };
                       entries++;
                     }
 
                     cluster_offset += size / CLUSTER_SIZE;
                     size = (64 * 1024 * 1024);
                     assert(cluster_offset == (N64ROM_CLUSTER_START + 2));
-                    char name83nn[] = "NROMF   N64";
+                    char name83nn[] = "VROMF   V64";
                     name83nn[1] = (char)gGameCode[0] & 0xFF;
                     name83nn[2] = (char)((gGameCode[1] >> 8) & 0xFF);
                     name83nn[3] = (char)(gGameCode[1] & 0xFF);
                     name83nn[4] = (char)((gGameCode[2] >> 8) & 0xFF);
-                    char nameLongnn[] = "N\0R\0O\0M\0F\0.\0n\0""6\0""4\0\0\0\xFF\xFF\xFF\xFF\xFF\xFF";
+                    char nameLongnn[] = "V\0R\0O\0M\0F\0.\0v\0""6\0""4\0\0\0\xFF\xFF\xFF\xFF\xFF\xFF";
                     nameLongnn[2] = (char)gGameCode[0] & 0xFF;
                     nameLongnn[4] = (char)((gGameCode[1] >> 8) & 0xFF);
                     nameLongnn[6] = (char)(gGameCode[1] & 0xFF);
@@ -519,7 +525,11 @@ int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void* buf,
                         nameLongzr[4] = (char)((gGameCode[1] >> 8) & 0xFF);
                         nameLongzr[6] = (char)(gGameCode[1] & 0xFF);
                         nameLongzr[8] = (char)((gGameCode[2] >> 8) & 0xFF);
-                        init_dir_entry(++entries, name83zr, nameLongzr, cluster_offset, size, 0); // Same as N64 just byteflipped, ram for Ares emulator support.
+                        if (((gGameCode[1] >> 8) & 0xFF) == 0x44 && (gGameCode[1] & 0xFF) == 0x5A ) {
+                          init_dir_entry(++entries, name83zr, nameLongzr, cluster_offset, size / 4 * 3, 0);
+                        } else {
+                          init_dir_entry(++entries, name83zr, nameLongzr, cluster_offset, size / 4, 0); // Same as N64 just byteflipped, ram for Ares emulator support.
+                        };
                       }
                       entries++;
                     }
@@ -582,7 +592,7 @@ int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void* buf,
                           CICString = NTSC;
                         }
                         int termfix = sprintf(buf,
-                        "\nMH Firmware 20260613"
+                        "\nFirmware MH20260613-2"
                         "\nCart tester report:\n\n"
                         "    EEPROM      - %s\n"
                         "    SRAM        - %s\n"
@@ -596,7 +606,7 @@ int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void* buf,
                         "    RomRegion   - %c\n"
                         "    RomVersion  - %02X\n\n",
                         EepString,
-                        (gSRAMPresent != 0) ? OK : NotPresent,
+                        ((gSRAMPresent != 0) && (gFramPresent == 0)) ? OK : NotPresent,
                         (gFramPresent != 0) ? OK : NotPresent, gFlashType,
                         CICString,
                         gCICName,
@@ -678,7 +688,7 @@ int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void* buf,
                       if (gFramPresent != 0) {
                         FlashRamRead512B(address, (uint16_t*)buf, false);
                       } else {
-                        SRAMRead512B(address, (uint16_t*)buf, true);
+                        SRAMRead512B(address, (uint16_t*)buf, false);
                       }
 
                   } else if (cluster == EEPROM_CLUSTER_START) {
