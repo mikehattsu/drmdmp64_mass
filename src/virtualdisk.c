@@ -584,7 +584,7 @@ int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void* buf,
                       if (gFramPresent != 0) {
                         FlashRamRead512B(address, (uint16_t*)buf, false);
                       } else {
-                        SRAMRead512B(address, (uint16_t*)buf, true);
+                        SRAMRead512B(address, (uint16_t*)buf, false);
                       }
 
                   } else if (cluster == EEPROM_CLUSTER_START) {
