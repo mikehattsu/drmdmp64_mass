@@ -592,7 +592,7 @@ int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void* buf,
                           CICString = NTSC;
                         }
                         int termfix = sprintf(buf,
-                        "\nMH Firmware 20260613"
+                        "\nFirmware MH20260613-2"
                         "\nCart tester report:\n\n"
                         "    EEPROM      - %s\n"
                         "    SRAM        - %s\n"
