@@ -4,6 +4,7 @@ DrmDmp64_mass is a mass storage device firmware for the DreamDumper64 project.
 This is a fork of the original project that's located here:
 https://github.com/nopjne/drmdmp64_mass
 
+---
 
 This unofficial version produces:
 - The rom that can be extracted in both .v64 (byteswapped) and .z64 (big endian) formats.
@@ -11,6 +12,8 @@ This unofficial version produces:
 - .ram, .flash and .eeprom save files compatible with ares.
 
 The .ram, .flash and .eep save files can also be used with gopher64, but the .ram/.flash files must be renamed to .sra/.fla before use. DO NOT use the pj64/mupen .sra/.fla files with gopher64.
+
+NOTE: When swapping cartridges make sure you disconnect and eject the drive, otherwise the operating system may cache the files from the previous cartridge.
 
 ---
 
@@ -22,6 +25,7 @@ You need to turn the cartridge reader upside down and have it so the cartridge p
 
 Make sure you double check that the pins on whatever Pi Pico clone you have matches. The 2 pins that I connected on mine says 16 and 17 on the top of the board.
 
+---
 
 How to build (this project depends on tinyusb):
 ```
@@ -45,5 +49,3 @@ How to use:
 2. Connect USB to PC.
 3. Navigate to the drive, use normally.
 ```
-
-NOTE: When swapping cartridges make sure you disconnect and eject the drive, otherwise the operating system may cache the files from the previous cartridge.
