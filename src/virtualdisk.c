@@ -428,17 +428,17 @@ int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void* buf,
                     uint32_t size = 2 * 1024;
                     assert(cluster_offset == (EEPROM_CLUSTER_START + 2));
                     if (gEepromSize != 0) {
-                      char name83ne[] = "VROMF   EEP";
-                      name83ne[1] = (char)gGameCode[0] & 0xFF;
-                      name83ne[2] = (char)((gGameCode[1] >> 8) & 0xFF);
-                      name83ne[3] = (char)(gGameCode[1] & 0xFF);
-                      name83ne[4] = (char)((gGameCode[2] >> 8) & 0xFF);
-                      char nameLongne[] = "V\0R\0O\0M\0F\0.\0e\0e\0p\0\0\0\xFF\xFF\xFF\xFF\xFF\xFF";
-                      nameLongne[2] = (char)gGameCode[0] & 0xFF;
-                      nameLongne[4] = (char)((gGameCode[1] >> 8) & 0xFF);
-                      nameLongne[6] = (char)(gGameCode[1] & 0xFF);
-                      nameLongne[8] = (char)((gGameCode[2] >> 8) & 0xFF);
-                      init_dir_entry(++entries, name83ne, nameLongne, cluster_offset, gEepromSize, 0);
+                      char name83ve[] = "VROMF   EEP";
+                      name83ve[1] = (char)gGameCode[0] & 0xFF;
+                      name83ve[2] = (char)((gGameCode[1] >> 8) & 0xFF);
+                      name83ve[3] = (char)(gGameCode[1] & 0xFF);
+                      name83ve[4] = (char)((gGameCode[2] >> 8) & 0xFF);
+                      char nameLongve[] = "V\0R\0O\0M\0F\0.\0e\0e\0p\0\0\0\xFF\xFF\xFF\xFF\xFF\xFF";
+                      nameLongve[2] = (char)gGameCode[0] & 0xFF;
+                      nameLongve[4] = (char)((gGameCode[1] >> 8) & 0xFF);
+                      nameLongve[6] = (char)(gGameCode[1] & 0xFF);
+                      nameLongve[8] = (char)((gGameCode[2] >> 8) & 0xFF);
+                      init_dir_entry(++entries, name83ve, nameLongve, cluster_offset, gEepromSize, 0);
                       entries++;
                     }
 
@@ -481,17 +481,17 @@ int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void* buf,
                     cluster_offset += size / CLUSTER_SIZE;
                     size = (64 * 1024 * 1024);
                     assert(cluster_offset == (N64ROM_CLUSTER_START + 2));
-                    char name83nn[] = "VROMF   V64";
-                    name83nn[1] = (char)gGameCode[0] & 0xFF;
-                    name83nn[2] = (char)((gGameCode[1] >> 8) & 0xFF);
-                    name83nn[3] = (char)(gGameCode[1] & 0xFF);
-                    name83nn[4] = (char)((gGameCode[2] >> 8) & 0xFF);
-                    char nameLongnn[] = "V\0R\0O\0M\0F\0.\0v\0""6\0""4\0\0\0\xFF\xFF\xFF\xFF\xFF\xFF";
-                    nameLongnn[2] = (char)gGameCode[0] & 0xFF;
-                    nameLongnn[4] = (char)((gGameCode[1] >> 8) & 0xFF);
-                    nameLongnn[6] = (char)(gGameCode[1] & 0xFF);
-                    nameLongnn[8] = (char)((gGameCode[2] >> 8) & 0xFF);
-                    init_dir_entry(++entries, name83nn, nameLongnn, cluster_offset, gRomSize, ATTR_READONLY);
+                    char name83vv[] = "VROMF   V64";
+                    name83vv[1] = (char)gGameCode[0] & 0xFF;
+                    name83vv[2] = (char)((gGameCode[1] >> 8) & 0xFF);
+                    name83vv[3] = (char)(gGameCode[1] & 0xFF);
+                    name83vv[4] = (char)((gGameCode[2] >> 8) & 0xFF);
+                    char nameLongvv[] = "V\0R\0O\0M\0F\0.\0v\0""6\0""4\0\0\0\xFF\xFF\xFF\xFF\xFF\xFF";
+                    nameLongvv[2] = (char)gGameCode[0] & 0xFF;
+                    nameLongvv[4] = (char)((gGameCode[1] >> 8) & 0xFF);
+                    nameLongvv[6] = (char)(gGameCode[1] & 0xFF);
+                    nameLongvv[8] = (char)((gGameCode[2] >> 8) & 0xFF);
+                    init_dir_entry(++entries, name83vv, nameLongvv, cluster_offset, gRomSize, ATTR_READONLY);
                     entries++;
 
                     cluster_offset += size / CLUSTER_SIZE;
@@ -604,7 +604,7 @@ int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void* buf,
                           CICString = NTSC;
                         }
                         int termfix = sprintf(buf,
-                        "\nFirmware MH20260613-2"
+                        "\nFirmware MH20260615"
                         "\nCart tester report:\n\n"
                         "    EEPROM      - %s\n"
                         "    SRAM        - %s\n"
