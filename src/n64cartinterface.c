@@ -535,10 +535,24 @@ void SRAMWrite512B(uint32_t address, unsigned char *buffer, bool flip)
 {
     set_address(address);
     busy_wait_at_least_cycles(READ_LOW_DELAY_NS * 2);
+
     for (uint32_t i = 0; i < 256; i += 1) {
         uint32_t temp[3];
-        temp[0] = buffer[i * 2];
-        temp[1] = buffer[i * 2 + 1];
+
+        if (flip) {
+          temp[0] = buffer[i * 2];
+          temp[1] = buffer[i * 2 + 1];
+        }
+        else {
+          if (i % 2 == 0) {
+            temp[0] = buffer[(i + 1) * 2];
+            temp[1] = buffer[((i + 1) * 2) + 1];
+          } else
+          {
+            temp[0] = buffer[(i - 1) * 2];
+            temp[1] = buffer[((i - 1) * 2) + 1];
+          }
+        }
         temp[2] = temp[0] | temp[1] << 8;
         if (flip != false) {
             temp[2] = flip16((uint16_t)temp[2]);
@@ -553,8 +567,20 @@ void SRAMWrite512B(uint32_t address, unsigned char *buffer, bool flip)
     busy_wait_at_least_cycles(READ_LOW_DELAY_NS * 2);
     for (uint32_t i = 0; i < 2; i += 1) {
         uint32_t temp[3];
-        temp[0] = buffer[i * 2];
-        temp[1] = buffer[i * 2 + 1];
+        if (flip) {
+          temp[0] = buffer[i * 2];
+          temp[1] = buffer[i * 2 + 1];
+        }
+        else {
+          if (i % 2 == 0) {
+            temp[0] = buffer[(i + 1) * 2];
+            temp[1] = buffer[((i + 1) * 2) + 1];
+          } else
+          {
+            temp[0] = buffer[(i - 1) * 2];
+            temp[1] = buffer[((i - 1) * 2) + 1];
+          }
+        }
         temp[2] = temp[0] | temp[1] << 8;
         if (flip != false) {
             temp[2] = flip16((uint16_t)temp[2]);
@@ -590,11 +616,17 @@ void SRAMRead512B(uint32_t address, uint16_t *buffer, bool flip)
 {
     address += 0x08000000;
     set_address(address);
-    for (uint32_t i = 0; i < 256; i += 1) {
-        if (flip != false) {
-            buffer[i] = flip16(read16());
+    if (flip != false) {
+      for (uint32_t i = 0; i < 256; i += 1) {
+        buffer[i] = flip16(read16());
+      }
+    } else {
+      for (uint32_t i = 0; i < 256; i += 1) {
+        if (i % 2 == 0) {
+          buffer[i + 1] = read16();
         } else {
-            buffer[i] = read16();
+          buffer[i - 1] = read16();
         }
+      }
     }
 }
