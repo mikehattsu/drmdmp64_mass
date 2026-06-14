@@ -584,7 +584,7 @@ int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void* buf,
                       if (gFramPresent != 0) {
                         FlashRamRead512B(address, (uint16_t*)buf, false);
                       } else {
-                        SRAMRead512B(address, (uint16_t*)buf, false);
+                        SRAMRead512B(address, (uint16_t*)buf, true);
                       }
 
                   } else if (cluster == EEPROM_CLUSTER_START) {
@@ -674,7 +674,7 @@ int32_t tud_msc_write10_cb(uint8_t lun, uint32_t lba, uint32_t offset,  uint8_t*
                         FlashRamWrite512B(address, buffer, false);
                       } else {
                         address += 0x08000000;
-                        SRAMWrite512B(address, buffer, false);
+                        SRAMWrite512B(address, buffer, true);
                       }
 
                   } else if (cluster == EEPROM_CLUSTER_START) {
