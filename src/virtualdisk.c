@@ -649,6 +649,9 @@ int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void* buf,
                           "Examples:\n"
                           "type c:\\path\\to\\n64.eep > x:\\n64.eep\n"
                           "cat /path/to/n64.eep > /media/DreamDump64/n64.eep\n"
+						  "\n\nThe .sra/.fla save files are in pj64/mupen format.\n"
+						  "Do NOT use them with gopher64!!!\n"
+						  "Rename and use the .ram/.flash save files with gopher64.\n"
                           );
                         };
                         if (termfix <= (int)SECTOR_SIZE) {
