@@ -446,23 +446,35 @@ int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void* buf,
                     assert(cluster_offset == (FLASHRAM_CLUSTER_START + 2));
                     size = 128 * 1024;
                     if ((gSRAMPresent != false) || (gFramPresent != false)) {
-                      char name83nf[] = "VROMF   FLA";
-                      name83nf[1] = (char)gGameCode[0] & 0xFF;
-                      name83nf[2] = (char)((gGameCode[1] >> 8) & 0xFF);
-                      name83nf[3] = (char)(gGameCode[1] & 0xFF);
-                      name83nf[4] = (char)((gGameCode[2] >> 8) & 0xFF);
-                      char nameLongnf[] = "V\0R\0O\0M\0F\0.\0f\0l\0a\0\0\0\xFF\xFF\xFF\xFF\xFF\xFF";
-                      nameLongnf[2] = (char)gGameCode[0] & 0xFF;
-                      nameLongnf[4] = (char)((gGameCode[1] >> 8) & 0xFF);
-                      nameLongnf[6] = (char)(gGameCode[1] & 0xFF);
-                      nameLongnf[8] = (char)((gGameCode[2] >> 8) & 0xFF);
                       if (gFramPresent != false) {
-                        init_dir_entry(++entries, name83nf, nameLongnf, cluster_offset, size, 0);
-                      } else if (((gGameCode[1] >> 8) & 0xFF) == 0x44 && (gGameCode[1] & 0xFF) == 0x5A ) {
-                        init_dir_entry(++entries, name83nf, nameLongnf, cluster_offset, size / 4 * 3, 0);
+                        char name83vf[] = "VROMF   FLA";
+                        name83vf[1] = (char)gGameCode[0] & 0xFF;
+                        name83vf[2] = (char)((gGameCode[1] >> 8) & 0xFF);
+                        name83vf[3] = (char)(gGameCode[1] & 0xFF);
+                        name83vf[4] = (char)((gGameCode[2] >> 8) & 0xFF);
+                        char nameLongvf[] = "V\0R\0O\0M\0F\0.\0f\0l\0a\0\0\0\xFF\xFF\xFF\xFF\xFF\xFF";
+                        nameLongvf[2] = (char)gGameCode[0] & 0xFF;
+                        nameLongvf[4] = (char)((gGameCode[1] >> 8) & 0xFF);
+                        nameLongvf[6] = (char)(gGameCode[1] & 0xFF);
+                        nameLongvf[8] = (char)((gGameCode[2] >> 8) & 0xFF);
+                        init_dir_entry(++entries, name83vf, nameLongvf, cluster_offset, size, 0);
                       } else {
-                        init_dir_entry(++entries, name83nf, nameLongnf, cluster_offset, size / 4, 0);
-                      };
+                        char name83vs[] = "VROMF   SRA";
+                        name83vs[1] = (char)gGameCode[0] & 0xFF;
+                        name83vs[2] = (char)((gGameCode[1] >> 8) & 0xFF);
+                        name83vs[3] = (char)(gGameCode[1] & 0xFF);
+                        name83vs[4] = (char)((gGameCode[2] >> 8) & 0xFF);
+                        char nameLongvs[] = "V\0R\0O\0M\0F\0.\0s\0r\0a\0\0\0\xFF\xFF\xFF\xFF\xFF\xFF";
+                        nameLongvs[2] = (char)gGameCode[0] & 0xFF;
+                        nameLongvs[4] = (char)((gGameCode[1] >> 8) & 0xFF);
+                        nameLongvs[6] = (char)(gGameCode[1] & 0xFF);
+                        nameLongvs[8] = (char)((gGameCode[2] >> 8) & 0xFF);
+                        if (((gGameCode[1] >> 8) & 0xFF) == 0x44 && (gGameCode[1] & 0xFF) == 0x5A ) {
+                          init_dir_entry(++entries, name83vs, nameLongvs, cluster_offset, size / 4 * 3, 0);
+                        } else {
+                          init_dir_entry(++entries, name83vs, nameLongvs, cluster_offset, size / 4, 0);
+                        };
+                      }
                       entries++;
                     }
 
