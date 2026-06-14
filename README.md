@@ -6,12 +6,13 @@ https://github.com/nopjne/drmdmp64_mass
 
 
 This unofficial version produces:
+- The rom that can be extracted in both .v64 (byteswapped) and .z64 (big endian) formats.
 - .sra, .fla and .eep save files compatible with various pj64/mupen emulators.
 - .ram, .flash and .eeprom save files compatible with ares.
-- The .ram, .flash and .eep save files can also be used with gopher64, but the .ram/.flash must be renamed to .sra/.fla before use. DO NOT use the pj64/mupen .sra/.fla files with gopher64.
-- The rom that can be extracted in both .v64 (byteswapped) and .z64 (big endian) formats.
 
+The .ram, .flash and .eep save files can also be used with gopher64, but the .ram/.flash files must be renamed to .sra/.fla before use. DO NOT use the pj64/mupen .sra/.fla files with gopher64.
 
+---
 
 I've also made an eeprom save fix for the dumper that's sold on various websites that looks like this:
 ![alt text](https://github.com/mikehattsu/drmdmp64_mass/blob/master/dumper.jpg?raw=true)
