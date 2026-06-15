@@ -13,6 +13,9 @@ This unofficial version produces:
 
 The .ram, .flash and .eep save files can also be used with gopher64, but the .ram/.flash files must be renamed to .sra/.fla before use. DO NOT use the pj64/mupen .sra/.fla files with gopher64.
 
+EDIT: The latest beta release will now also create .sra, .fla and .eep save files compatible with gopher64/everdrive64:
+https://github.com/mikehattsu/drmdmp64_mass/releases/tag/20260615b
+
 NOTE: When swapping cartridges make sure you disconnect and eject the drive, otherwise the operating system may cache the files from the previous cartridge.
 
 ---
