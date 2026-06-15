@@ -275,22 +275,38 @@ static unsigned char ChkSum (const unsigned char *pFcbName)
   return (Sum);
 }
 
-static void init_dir_entry(struct dir_entry *entry, const char *fn, const char *uniname, uint32_t cluster, uint len, uint8_t attribute) {
+static void init_dir_entry(struct dir_entry *entry, const char *fn, const char *uniname, uint32_t cluster, uint len, uint8_t attribute, bool fix_name, bool dos_only) {
     LFN *lfnentry = (LFN*)entry;
-    memset(lfnentry, 0, sizeof(LFN));
-    lfnentry->sequenceNo = 0x41;
-    lfnentry->fileattribute = 0x0f;
-    lfnentry->checksum = ChkSum((const unsigned char*)fn);
-    memcpy(lfnentry->fileName_Part1, uniname, sizeof(lfnentry->fileName_Part1));
-    memcpy(lfnentry->fileName_Part2, uniname + sizeof(lfnentry->fileName_Part1), sizeof(lfnentry->fileName_Part2));
-    memcpy(lfnentry->fileName_Part3, uniname + sizeof(lfnentry->fileName_Part1) + sizeof(lfnentry->fileName_Part2), sizeof(lfnentry->fileName_Part3));
-    entry++;
+    if (!dos_only) {
+      memset(lfnentry, 0, sizeof(LFN));
+      lfnentry->sequenceNo = 0x41;
+      lfnentry->fileattribute = 0x0f;
+      memcpy(lfnentry->fileName_Part1, uniname, sizeof(lfnentry->fileName_Part1));
+      memcpy(lfnentry->fileName_Part2, uniname + sizeof(lfnentry->fileName_Part1), sizeof(lfnentry->fileName_Part2));
+      memcpy(lfnentry->fileName_Part3, uniname + sizeof(lfnentry->fileName_Part1) + sizeof(lfnentry->fileName_Part2), sizeof(lfnentry->fileName_Part3));
+      if (fix_name) {
+        lfnentry->fileName_Part1[2] = (char)gGameCode[0] & 0xFF;
+        lfnentry->fileName_Part1[4] = (char)((gGameCode[1] >> 8) & 0xFF);
+        lfnentry->fileName_Part1[6] = (char)(gGameCode[1] & 0xFF);
+        lfnentry->fileName_Part1[8] = (char)((gGameCode[2] >> 8) & 0xFF);
+      };
+      entry++;
+    };
     entry->creation_time_frac = RASPBERRY_PI_TIME_FRAC;
     entry->creation_time = RASPBERRY_PI_TIME;
     entry->creation_date = RASPBERRY_PI_DATE;
     entry->last_modified_time = RASPBERRY_PI_TIME;
     entry->last_modified_date = RASPBERRY_PI_DATE;
     memcpy(entry->name, fn, 11);
+    if (fix_name) {
+      entry->name[1] = (char)gGameCode[0] & 0xFF;
+      entry->name[2] = (char)((gGameCode[1] >> 8) & 0xFF);
+      entry->name[3] = (char)(gGameCode[1] & 0xFF);
+      entry->name[4] = (char)((gGameCode[2] >> 8) & 0xFF);
+    };
+    if (!dos_only) {
+      lfnentry->checksum = ChkSum((const unsigned char*)entry->name);
+    };
     entry->attr = attribute;
     entry->cluster_hi = (uint16_t)(cluster >> 16);
     entry->cluster_lo = (uint16_t)(cluster & 0xFFFF);
@@ -418,7 +434,7 @@ int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void* buf,
             lba -= SECTORS_PER_FAT * FAT_COUNT;
             if (lba < ROOT_DIRECTORY_SECTORS) {
                 // we don't support that many directory entries actually
-                if (!lba) {
+                if (lba == 0) {
                     memset(buf, 0, buf_size);
                     // root directory -- Do not use lower case letters, windows will show the file but it won't be able to "find" the data for the file.
                     struct dir_entry *entries = (struct dir_entry *) buf;
@@ -428,18 +444,10 @@ int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void* buf,
                     uint32_t size = 2 * 1024;
                     assert(cluster_offset == (EEPROM_CLUSTER_START + 2));
                     if (gEepromSize != 0) {
-                      char name83ve[] = "VROMF   EEP";
-                      name83ve[1] = (char)gGameCode[0] & 0xFF;
-                      name83ve[2] = (char)((gGameCode[1] >> 8) & 0xFF);
-                      name83ve[3] = (char)(gGameCode[1] & 0xFF);
-                      name83ve[4] = (char)((gGameCode[2] >> 8) & 0xFF);
-                      char nameLongve[] = "V\0R\0O\0M\0F\0.\0e\0e\0p\0\0\0\xFF\xFF\xFF\xFF\xFF\xFF";
-                      nameLongve[2] = (char)gGameCode[0] & 0xFF;
-                      nameLongve[4] = (char)((gGameCode[1] >> 8) & 0xFF);
-                      nameLongve[6] = (char)(gGameCode[1] & 0xFF);
-                      nameLongve[8] = (char)((gGameCode[2] >> 8) & 0xFF);
-                      init_dir_entry(++entries, name83ve, nameLongve, cluster_offset, gEepromSize, 0);
+                      init_dir_entry(++entries, "VROMF   EEP", "V\0R\0O\0M\0F\0.\0e\0e\0p\0\0\0\xFF\xFF\xFF\xFF\xFF\xFF", cluster_offset, gEepromSize, 0, true, false); // File for PJ64/mupen
                       entries++;
+                      /*init_dir_entry(++entries, "DROMF   EEP", "D\0R\0O\0M\0F\0.\0v\0""6\0""4\0.\0e\0e\0p\0", cluster_offset, gEepromSize, 0, true, false); // File for DaisyDrive64
+                      /entries++;*/ // Code moved to lba 1
                     }
 
                     cluster_offset += (size / CLUSTER_SIZE) + 1;
@@ -447,67 +455,40 @@ int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void* buf,
                     size = 128 * 1024;
                     if ((gSRAMPresent != false) || (gFramPresent != false)) {
                       if (gFramPresent != false) {
-                        char name83vf[] = "VROMF   FLA";
-                        name83vf[1] = (char)gGameCode[0] & 0xFF;
-                        name83vf[2] = (char)((gGameCode[1] >> 8) & 0xFF);
-                        name83vf[3] = (char)(gGameCode[1] & 0xFF);
-                        name83vf[4] = (char)((gGameCode[2] >> 8) & 0xFF);
-                        char nameLongvf[] = "V\0R\0O\0M\0F\0.\0f\0l\0a\0\0\0\xFF\xFF\xFF\xFF\xFF\xFF";
-                        nameLongvf[2] = (char)gGameCode[0] & 0xFF;
-                        nameLongvf[4] = (char)((gGameCode[1] >> 8) & 0xFF);
-                        nameLongvf[6] = (char)(gGameCode[1] & 0xFF);
-                        nameLongvf[8] = (char)((gGameCode[2] >> 8) & 0xFF);
-                        init_dir_entry(++entries, name83vf, nameLongvf, cluster_offset, size, 0);
+                        init_dir_entry(++entries, "VROMF   FLA", "V\0R\0O\0M\0F\0.\0f\0l\0a\0\0\0\xFF\xFF\xFF\xFF\xFF\xFF", cluster_offset, size, 0, true, false); // File for PJ64/mupen
                       } else {
                         char name83vs[] = "VROMF   SRA";
-                        name83vs[1] = (char)gGameCode[0] & 0xFF;
-                        name83vs[2] = (char)((gGameCode[1] >> 8) & 0xFF);
-                        name83vs[3] = (char)(gGameCode[1] & 0xFF);
-                        name83vs[4] = (char)((gGameCode[2] >> 8) & 0xFF);
                         char nameLongvs[] = "V\0R\0O\0M\0F\0.\0s\0r\0a\0\0\0\xFF\xFF\xFF\xFF\xFF\xFF";
-                        nameLongvs[2] = (char)gGameCode[0] & 0xFF;
-                        nameLongvs[4] = (char)((gGameCode[1] >> 8) & 0xFF);
-                        nameLongvs[6] = (char)(gGameCode[1] & 0xFF);
-                        nameLongvs[8] = (char)((gGameCode[2] >> 8) & 0xFF);
                         if (((gGameCode[1] >> 8) & 0xFF) == 0x44 && (gGameCode[1] & 0xFF) == 0x5A ) {
-                          init_dir_entry(++entries, name83vs, nameLongvs, cluster_offset, size / 4 * 3, 0);
+                          init_dir_entry(++entries, name83vs, nameLongvs, cluster_offset, size / 4 * 3, 0, true, false); // File for PJ64/mupen
                         } else {
-                          init_dir_entry(++entries, name83vs, nameLongvs, cluster_offset, size / 4, 0);
+                          init_dir_entry(++entries, name83vs, nameLongvs, cluster_offset, size / 4, 0, true, false); // File for PJ64/mupen
                         };
                       }
                       entries++;
+                      /*if (gFramPresent != false) {
+                        init_dir_entry(++entries, "DROMF   FLA", "D\0R\0O\0M\0F\0.\0v\0""6\0""4\0.\0f\0l\0a\0", cluster_offset, size, 0, true, false); // File for DaisyDrive64
+                      } // DaisyDrive uses the opposite file for SRAM, see below
+                      entries++;*/ // Code moved to lba 1
                     }
 
                     cluster_offset += size / CLUSTER_SIZE;
                     size = (64 * 1024 * 1024);
                     assert(cluster_offset == (N64ROM_CLUSTER_START + 2));
-                    char name83vv[] = "VROMF   V64";
-                    name83vv[1] = (char)gGameCode[0] & 0xFF;
-                    name83vv[2] = (char)((gGameCode[1] >> 8) & 0xFF);
-                    name83vv[3] = (char)(gGameCode[1] & 0xFF);
-                    name83vv[4] = (char)((gGameCode[2] >> 8) & 0xFF);
-                    char nameLongvv[] = "V\0R\0O\0M\0F\0.\0v\0""6\0""4\0\0\0\xFF\xFF\xFF\xFF\xFF\xFF";
-                    nameLongvv[2] = (char)gGameCode[0] & 0xFF;
-                    nameLongvv[4] = (char)((gGameCode[1] >> 8) & 0xFF);
-                    nameLongvv[6] = (char)(gGameCode[1] & 0xFF);
-                    nameLongvv[8] = (char)((gGameCode[2] >> 8) & 0xFF);
-                    init_dir_entry(++entries, name83vv, nameLongvv, cluster_offset, gRomSize, ATTR_READONLY);
+                    init_dir_entry(++entries, "VROMF   V64", "V\0R\0O\0M\0F\0.\0v\0""6\0""4\0\0\0\xFF\xFF\xFF\xFF\xFF\xFF", cluster_offset, gRomSize, ATTR_READONLY, true, false); // Standard v64 format
                     entries++;
+
+                    if ((!gSRAMPresent) && (!gFramPresent) && (gEepromSize == 0)) {
+                      init_dir_entry(++entries, "DROMF   V64", "D\0R\0O\0M\0F\0.\0v\0""6\0""4\0\0\0\xFF\xFF\xFF\xFF\xFF\xFF", cluster_offset, gRomSize, ATTR_READONLY, true, false); // File for DaisyDrive64
+                      entries++;
+                    }
 
                     cluster_offset += size / CLUSTER_SIZE;
                     size = (64 * 1024 * 1024);
                     assert(cluster_offset == (Z64ROM_CLUSTER_START + 2));
-                    char name83zz[] = "ZROMF   Z64";
-                    name83zz[1] = (char)gGameCode[0] & 0xFF;
-                    name83zz[2] = (char)((gGameCode[1] >> 8) & 0xFF);
-                    name83zz[3] = (char)(gGameCode[1] & 0xFF);
-                    name83zz[4] = (char)((gGameCode[2] >> 8) & 0xFF);
-                    char nameLongzz[] = "Z\0R\0O\0M\0F\0.\0z\0""6\0""4\0\0\0\xFF\xFF\xFF\xFF\xFF\xFF";
-                    nameLongzz[2] = (char)gGameCode[0] & 0xFF;
-                    nameLongzz[4] = (char)((gGameCode[1] >> 8) & 0xFF);
-                    nameLongzz[6] = (char)(gGameCode[1] & 0xFF);
-                    nameLongzz[8] = (char)((gGameCode[2] >> 8) & 0xFF);
-                    init_dir_entry(++entries, name83zz, nameLongzz, cluster_offset, gRomSize, ATTR_READONLY); // Same as N64 just byteflipped.
+                    init_dir_entry(++entries, "ZROMF   Z64", "Z\0R\0O\0M\0F\0.\0z\0""6\0""4\0\0\0\xFF\xFF\xFF\xFF\xFF\xFF", cluster_offset, gRomSize, ATTR_READONLY, true, false); // Standard z64 format
+                    entries++;
+                    init_dir_entry(++entries, "GROMF   Z64", "G\0R\0O\0M\0F\0.\0z\0""6\0""4\0\0\0\xFF\xFF\xFF\xFF\xFF\xFF", cluster_offset, gRomSize, ATTR_READONLY, true, false); // File for Gopher64/ED64
                     entries++;
 
                     cluster_offset += size / CLUSTER_SIZE;
@@ -515,52 +496,43 @@ int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void* buf,
                     assert(cluster_offset == (FLASHRAMFLIP_CLUSTER_START + 2));
                     if ((gSRAMPresent != false) || (gFramPresent != false)) {
                       if (gFramPresent != false) {
-                        char name83zf[] = "ZROMF   FLA";
-                        name83zf[1] = (char)gGameCode[0] & 0xFF;
-                        name83zf[2] = (char)((gGameCode[1] >> 8) & 0xFF);
-                        name83zf[3] = (char)(gGameCode[1] & 0xFF);
-                        name83zf[4] = (char)((gGameCode[2] >> 8) & 0xFF);
-                        char nameLongzf[] = "Z\0R\0O\0M\0F\0.\0f\0l\0a\0s\0h\0\0\0\xFF\xFF";
-                        nameLongzf[2] = (char)gGameCode[0] & 0xFF;
-                        nameLongzf[4] = (char)((gGameCode[1] >> 8) & 0xFF);
-                        nameLongzf[6] = (char)(gGameCode[1] & 0xFF);
-                        nameLongzf[8] = (char)((gGameCode[2] >> 8) & 0xFF);
-                        init_dir_entry(++entries, name83zf, nameLongzf, cluster_offset, size, 0); // Same as N64 just byteflipped, flash for Ares emulator support.
+                        init_dir_entry(++entries, "ZROMF   FLA", "Z\0R\0O\0M\0F\0.\0f\0l\0a\0s\0h\0\0\0\xFF\xFF", cluster_offset, size, 0, true, false); // File for Ares
                       } else {
                         char name83zr[] = "ZROMF   RAM";
-                        name83zr[1] = (char)gGameCode[0] & 0xFF;
-                        name83zr[2] = (char)((gGameCode[1] >> 8) & 0xFF);
-                        name83zr[3] = (char)(gGameCode[1] & 0xFF);
-                        name83zr[4] = (char)((gGameCode[2] >> 8) & 0xFF);
                         char nameLongzr[] = "Z\0R\0O\0M\0F\0.\0r\0a\0m\0\0\0\xFF\xFF\xFF\xFF\xFF\xFF";
-                        nameLongzr[2] = (char)gGameCode[0] & 0xFF;
-                        nameLongzr[4] = (char)((gGameCode[1] >> 8) & 0xFF);
-                        nameLongzr[6] = (char)(gGameCode[1] & 0xFF);
-                        nameLongzr[8] = (char)((gGameCode[2] >> 8) & 0xFF);
                         if (((gGameCode[1] >> 8) & 0xFF) == 0x44 && (gGameCode[1] & 0xFF) == 0x5A ) {
-                          init_dir_entry(++entries, name83zr, nameLongzr, cluster_offset, size / 4 * 3, 0);
+                          init_dir_entry(++entries, name83zr, nameLongzr, cluster_offset, size / 4 * 3, 0, true, false); // File for Ares
                         } else {
-                          init_dir_entry(++entries, name83zr, nameLongzr, cluster_offset, size / 4, 0); // Same as N64 just byteflipped, ram for Ares emulator support.
+                          init_dir_entry(++entries, name83zr, nameLongzr, cluster_offset, size / 4, 0, true, false); // File for Ares
                         };
                       }
                       entries++;
+
+                      if (gFramPresent != false) {
+                        init_dir_entry(++entries, "GROMF   FLA", "G\0R\0O\0M\0F\0.\0f\0l\0a\0\0\0\xFF\xFF\xFF\xFF\xFF\xFF", cluster_offset, size, 0, true, false); // File for Gopher64/ED64
+                      } else {
+                        char name83gs[] = "GROMF   SRA";
+                        char nameLonggs[] = "G\0R\0O\0M\0F\0.\0s\0r\0a\0\0\0\xFF\xFF\xFF\xFF\xFF\xFF";
+                        if (((gGameCode[1] >> 8) & 0xFF) == 0x44 && (gGameCode[1] & 0xFF) == 0x5A ) {
+                          init_dir_entry(++entries, name83gs, nameLonggs, cluster_offset, size / 4 * 3, 0, true, false); // File for Gopher64/ED64
+                        } else {
+                          init_dir_entry(++entries, name83gs, nameLonggs, cluster_offset, size / 4, 0, true, false); // File for Gopher64/ED64
+                        };
+                      }
+                      entries++;
+                      /*if (gFramPresent == false) {
+                        init_dir_entry(++entries, "DROMF   FLA", "D\0R\0O\0M\0F\0.\0v\0""6\0""4\0.\0f\0l\0a\0", cluster_offset, size, 0, true, false); // File for DaisyDrive64, size is bigger
+                      } // DaisyDrive uses the opposite file for FRAM, see above
+                      entries++;*/ // Code moved to lba 1
                     }
 
                     cluster_offset += size / CLUSTER_SIZE;
                     size = 2 * 1024;
                     assert(cluster_offset == (EEPROMFLIP_CLUSTER_START + 2));
                     if (gEepromSize != 0) {
-                      char name83ze[] = "ZROMF   EEP";
-                      name83ze[1] = (char)gGameCode[0] & 0xFF;
-                      name83ze[2] = (char)((gGameCode[1] >> 8) & 0xFF);
-                      name83ze[3] = (char)(gGameCode[1] & 0xFF);
-                      name83ze[4] = (char)((gGameCode[2] >> 8) & 0xFF);
-                      char nameLongze[] = "Z\0R\0O\0M\0F\0.\0e\0e\0p\0r\0o\0m\0\0\0";
-                      nameLongze[2] = (char)gGameCode[0] & 0xFF;
-                      nameLongze[4] = (char)((gGameCode[1] >> 8) & 0xFF);
-                      nameLongze[6] = (char)(gGameCode[1] & 0xFF);
-                      nameLongze[8] = (char)((gGameCode[2] >> 8) & 0xFF);
-                      init_dir_entry(++entries, name83ze, nameLongze, cluster_offset, gEepromSize, 0);
+                      init_dir_entry(++entries, "ZROMF   EEP", "Z\0R\0O\0M\0F\0.\0e\0e\0p\0r\0o\0m\0\0\0", cluster_offset, gEepromSize, 0, true, false); // File for Ares
+                      entries++;
+                      init_dir_entry(++entries, "GROMF   EEP", "G\0R\0O\0M\0F\0.\0e\0e\0p\0\0\0\xFF\xFF\xFF\xFF\xFF\xFF", cluster_offset, gEepromSize, 0, true, false); // File for Gopher64/ED64
                       entries++;
                     }
 
@@ -568,8 +540,52 @@ int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void* buf,
                     size = 2 * 1024;
                     assert(cluster_offset == (CARTTEST_CLUSTER_START + 2));
                     // We only fill the first 1024 bytes with text
-                    init_dir_entry(++entries, "CARTTESTTXT", "C\0a\0r\0t\0T\0e\0s\0t\0.\0t\0x\0t\0\0\0", cluster_offset, 1024, ATTR_READONLY);
+                    init_dir_entry(++entries, "CARTINFOTXT", "C\0a\0r\0t\0I\0n\0f\0o\0.\0t\0x\0t\0\0\0", cluster_offset, 1024, ATTR_READONLY, false, false);
                     entries++;
+                    init_dir_entry(++entries, "\xE5          ", "", cluster_offset, 1024, ATTR_READONLY, false, true); // Padding for the last block
+                } else if (lba == 1) {
+                    memset(buf, 0, buf_size);
+
+                    if (gSRAMPresent || gFramPresent || gEepromSize != 0) {
+                      struct dir_entry *entries = (struct dir_entry *) buf;
+                      uint32_t cluster_offset = 2;
+                      uint32_t size = 2 * 1024;
+                      assert(cluster_offset == (EEPROM_CLUSTER_START + 2));
+                      if (gEepromSize != 0) {
+                        init_dir_entry(entries++, "DROMF   EEP", "D\0R\0O\0M\0F\0.\0v\0""6\0""4\0.\0e\0e\0p\0", cluster_offset, gEepromSize, 0, true, false); // File for DaisyDrive64
+                        entries++;
+                      }
+
+                      cluster_offset += (size / CLUSTER_SIZE) + 1;
+                      assert(cluster_offset == (FLASHRAM_CLUSTER_START + 2));
+                      size = 128 * 1024;
+                      if ((gSRAMPresent != false) || (gFramPresent != false)) {
+                        if (gFramPresent != false) {
+                          init_dir_entry(entries++, "DROMF   FLA", "D\0R\0O\0M\0F\0.\0v\0""6\0""4\0.\0f\0l\0a\0", cluster_offset, size, 0, true, false); // File for DaisyDrive64
+                          entries++;
+                        } // DaisyDrive uses the opposite file for SRAM, see below
+                      }
+
+                      cluster_offset += size / CLUSTER_SIZE;
+                      size = (64 * 1024 * 1024);
+                      assert(cluster_offset == (N64ROM_CLUSTER_START + 2));
+                      init_dir_entry(entries++, "DROMF   V64", "D\0R\0O\0M\0F\0.\0v\0""6\0""4\0\0\0\xFF\xFF\xFF\xFF\xFF\xFF", cluster_offset, gRomSize, ATTR_READONLY, true, false); // File for DaisyDrive64
+                      entries++;
+
+                      cluster_offset += size / CLUSTER_SIZE;
+                      size = (64 * 1024 * 1024);
+                      assert(cluster_offset == (Z64ROM_CLUSTER_START + 2));
+
+                      cluster_offset += size / CLUSTER_SIZE;
+                      size = 128 * 1024;
+                      assert(cluster_offset == (FLASHRAMFLIP_CLUSTER_START + 2));
+                      if ((gSRAMPresent != false) || (gFramPresent != false)) {
+                        if (gFramPresent == false) {
+                          init_dir_entry(entries++, "DROMF   FLA", "D\0R\0O\0M\0F\0.\0v\0""6\0""4\0.\0f\0l\0a\0", cluster_offset, size, 0, true, false); // File for DaisyDrive64, size is bigger
+                          entries++;
+                        } // DaisyDrive uses the opposite file for FRAM, see above
+                      }
+                    }
                 } else {
                   memset(buf, 0, buf_size);
                 }
@@ -604,7 +620,7 @@ int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void* buf,
                           CICString = NTSC;
                         }
                         int termfix = sprintf(buf,
-                        "\nFirmware MH20260615"
+                        "\nFirmware MH20260615b"
                         "\nCart tester report:\n\n"
                         "    EEPROM      - %s\n"
                         "    SRAM        - %s\n"
@@ -631,31 +647,38 @@ int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void* buf,
                         (gGameCode[2] & 0xFF)
                         );
                         if (termfix <= (int)SECTOR_SIZE) {
-                          ((uint8_t*)buf)[termfix] = 0x0A;
+                          ((uint8_t*)buf)[termfix] = 0x20;
                         };
                       } else if (cluster_offset == 1) {
                         memset(buf, 0x20, SECTOR_SIZE);
                         int termfix = 0;
                         if (gCICType == CIC_TYPE_INVALID) {
                           termfix = sprintf(buf,
-                          "\nCIC and EEPROM might need a fix to be read\n"
+                          "\n"
+                          "Files with names starting with D are in daisydrive64 format.\n"
+                          "Files with names starting with G are in gopher64/everdrive64 format.\n"
+                          "Files with names starting with V are in pj64/mupen64plus format.\n"
+                          "Files with names starting with Z are in ares format.\n"
+                          "\n\n\nCIC and EEPROM might need a fix to be read\n"
                           "Check here for info about how to fix your dumper:\n"
                           "https://github.com/mikehattsu/drmdmp64_mass\n"
                           );
                         } else {
                           termfix = sprintf(buf,
-                          "\nTo write saves it is best to use the\n"
+                          "\n"
+                          "Files with names starting with D are in daisydrive64 format.\n"
+                          "Files with names starting with G are in gopher64/everdrive64 format.\n"
+                          "Files with names starting with V are in pj64/mupen64plus format.\n"
+                          "Files with names starting with Z are in ares format.\n"
+                          "\n\n\nTo write saves it is best to use the\n"
                           "type command in Windows and cat in Linux\n\n"
                           "Examples:\n"
                           "type c:\\path\\to\\n64.eep > x:\\n64.eep\n"
                           "cat /path/to/n64.eep > /media/DreamDump64/n64.eep\n"
-						  "\n\nThe .sra/.fla save files are in pj64/mupen format.\n"
-						  "Do NOT use them with gopher64!!!\n"
-						  "Rename and use the .ram/.flash save files with gopher64.\n"
                           );
                         };
                         if (termfix <= (int)SECTOR_SIZE) {
-                          ((uint8_t*)buf)[termfix] = 0x0A;
+                          ((uint8_t*)buf)[termfix] = 0x20;
                         };
                       } else {
                         memset(buf, 0, SECTOR_SIZE);
@@ -719,7 +742,7 @@ int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void* buf,
 }
 
 //#define CFG_EXAMPLE_MSC_READONLY
-bool tud_msc_is_writable_cb (uint8_t lun)
+bool tud_msc_is_writable_cb(uint8_t lun)
 {
   (void) lun;
 
