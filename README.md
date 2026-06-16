@@ -6,15 +6,13 @@ https://github.com/nopjne/drmdmp64_mass
 
 ---
 
-This unofficial version produces:
-- The rom that can be extracted in both .v64 (byteswapped) and .z64 (big endian) formats.
+This unofficial version currently produces:
+- The rom file that can be extracted in both .v64 (byteswapped) and .z64 (big endian) formats.
 - .sra, .fla and .eep save files compatible with various pj64/mupen emulators.
 - .ram, .flash and .eeprom save files compatible with ares.
-
-The .ram, .flash and .eep save files can also be used with gopher64, but the .ram/.flash files must be renamed to .sra/.fla before use. DO NOT use the pj64/mupen .sra/.fla files with gopher64.
-
-EDIT: The latest beta release will now also create .sra, .fla and .eep save files compatible with gopher64/everdrive64:
-https://github.com/mikehattsu/drmdmp64_mass/releases/tag/20260615b
+- .sra, .fla and .eep save files compatible with gopher64 and everdrive64.
+- .v64.fla and .v64.eep save files compatible with daisydrive64.
+- CartInfo.txt with a cart test report and info about what files to use with what emulator/flash cart.
 
 NOTE: When swapping cartridges make sure you disconnect and eject the drive, otherwise the operating system may cache the files from the previous cartridge.
 
