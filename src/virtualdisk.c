@@ -1,14 +1,15 @@
 /**
- * SPX-License-Identifier: BSD-2-Clause 
+ * SPX-License-Identifier: BSD-2-Clause
  * Copyright (c) 2023 - NopJne
- * 
+ *
  * Virtual FAT16 disk construction.
  * Exposes the EEPROM, FlashRam, SRAM and catridge ROM as a file on a mass storage device.
  * Z64 are the byteflipped equivalents of the same data as the N64.
  * Filenames are separate to allow direct interaction with emulators and the savegames based on byteflipping modes.
- * Filenames are now V<ProductCode>.* for V64 format and Z<ProductCode>.* for Z64 format.
- * Z<ProductCode>.Z64 will also have Z<ProductCode>.eeprom and Z<ProductCode>.flash flipped the same way as the .Z64.
- * The Z<ProductCode>.* files should work with Ares.
+ * Files with names starting with D are in daisydrive64 format.
+ * Files with names starting with G are in gopher64/everdrive64 format.
+ * Files with names starting with V are in pj64/mupen64plus format.
+ * Files with names starting with Z are in ares format.
  */
 
 #include "bsp/board.h"
@@ -620,8 +621,8 @@ int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void* buf,
                           CICString = NTSC;
                         }
                         int termfix = sprintf(buf,
-                        "\nFirmware MH20260615b"
-                        "\nCart tester report:\n\n"
+                        "Firmware MH20260616"
+                        "\n\nCart test report:\n\n"
                         "    EEPROM      - %s\n"
                         "    SRAM        - %s\n"
                         "    FlashRam    - %s (%02X)\n"
