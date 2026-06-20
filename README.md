@@ -12,7 +12,7 @@ This unofficial version currently produces:
 - .ram, .flash and .eeprom save files compatible with ares.
 - .sra, .fla and .eep save files compatible with gopher64 and everdrive64.
 - .sav save files compatible with summercart64.
-- .v64.fla and .v64.eep save files compatible with daisydrive64.
+- .n64.fla and .n64.eep save files compatible with daisydrive64. The daisydrive64 .n64 rom file is in v64 (byteswapped) format.
 - CartInfo.txt with a cart test report and info about what files to use with what emulator/flash cart.
 
 NOTE: When swapping cartridges make sure you disconnect and eject the drive, otherwise the operating system may cache the files from the previous cartridge.
