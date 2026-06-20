@@ -40,14 +40,15 @@ cmake --build .
 
 How to update the firmware:
 ```
-Hold the bootsel button down while connecting USB to PC.
-Copy uoDrmDmp64_mass.uf2 to the RPI-RP2 drive that shows up.
+Hold the bootsel button on the board down while connecting the dumper by USB to a computer.
+Copy the uoDrmDmp64_mass.uf2 firmware file to the RPI-RP2 drive that shows up.
 Wait for the device to reboot.
 ```
 
 How to use:
 ```
 1. Insert cartridge into the cartridge slot.
-2. Connect USB to PC.
+2. Connect the dumper by USB to a computer.
 3. Navigate to the drive, use normally.
+4. If the drive doesn't show up, clean the connectors on the cart and try again.
 ```
