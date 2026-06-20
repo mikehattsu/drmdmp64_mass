@@ -280,7 +280,7 @@ static unsigned char ChkSum (const unsigned char *pFcbName)
   return (Sum);
 }
 
-static uint8_t init_dir_entry(struct dir_entry *entry, const char *fn, const char *uniname, uint32_t cluster, uint len, uint8_t attribute, bool fix_name)
+static uint8_t init_dir_entry(struct dir_entry *entry, const char *fn, const char *uniname, uint32_t cluster, uint len, uint8_t attribute, bool fix_name, bool no_dot)
 {
     uint valid_chars = 0;
     uint8_t entry_sum = 0;
@@ -305,9 +305,11 @@ static uint8_t init_dir_entry(struct dir_entry *entry, const char *fn, const cha
         }
       }
 
-      file_name[valid_chars * 2] = 0x2E;
-      file_name[(valid_chars * 2) + 1] = 0;
-      valid_chars++;
+      if (!no_dot) {
+        file_name[valid_chars * 2] = 0x2E;
+        file_name[(valid_chars * 2) + 1] = 0;
+        valid_chars++;
+      }
 
       if (isalnum((unsigned char)gGameCode[0] & 0xFF)) {
         file_name[valid_chars * 2] = (unsigned char)gGameCode[0] & 0xFF;
@@ -334,7 +336,7 @@ static uint8_t init_dir_entry(struct dir_entry *entry, const char *fn, const cha
       }
 
       // If the previous char is 0x2E, then gamecode hasn't been written
-      if (file_name[(valid_chars - 1) * 2] != 0x2E) {
+      if ((!no_dot) && file_name[(valid_chars - 1) * 2] != 0x2E) {
         file_name[valid_chars * 2] = 0x2E;
         file_name[(valid_chars * 2) + 1] = 0;
         valid_chars++;
@@ -594,11 +596,11 @@ int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void* buf,
                     uint8_t entto = 0;
                     assert(cluster_offset == (EEPROM_CLUSTER_START + 2));
                     if (gEepromSize != 0) {
-                      entto = init_dir_entry(++entries, "VROM    EEP", "VROM.eep", cluster_offset, gEepromSize, 0, true); // File for PJ64/mupen
+                      entto = init_dir_entry(++entries, "VROM    EEP", "VROM.eep", cluster_offset, gEepromSize, 0, true, false); // File for PJ64/mupen
                       for (enti = 0; enti < entto; enti++) {
                         entries++;
                       }
-                      entto = init_dir_entry(++entries, "DROM    EEP", "DROM.v64.eep", cluster_offset, gEepromSize, 0, true); // File for DaisyDrive64
+                      entto = init_dir_entry(++entries, "DROM    EEP", "DROM.n64.eep", cluster_offset, gEepromSize, 0, true, false); // File for DaisyDrive64
                       for (enti = 0; enti < entto; enti++) {
                         entries++;
                       }
@@ -609,21 +611,21 @@ int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void* buf,
                     size = 128 * 1024;
                     if ((gSRAMPresent != false) || (gFramPresent != false)) {
                       if (gFramPresent != false) {
-                        entto = init_dir_entry(++entries, "VROM    FLA", "VROM.fla", cluster_offset, size, 0, true); // File for PJ64/mupen
+                        entto = init_dir_entry(++entries, "VROM    FLA", "VROM.fla", cluster_offset, size, 0, true, false); // File for PJ64/mupen
                       } else {
                         char name83vs[] = "VROM    SRA";
                         char nameLongvs[] = "VROM.sra";
                         if (((gGameCode[1] >> 8) & 0xFF) == 0x44 && (gGameCode[1] & 0xFF) == 0x5A ) {
-                          entto = init_dir_entry(++entries, name83vs, nameLongvs, cluster_offset, size / 4 * 3, 0, true); // File for PJ64/mupen
+                          entto = init_dir_entry(++entries, name83vs, nameLongvs, cluster_offset, size / 4 * 3, 0, true, false); // File for PJ64/mupen
                         } else {
-                          entto = init_dir_entry(++entries, name83vs, nameLongvs, cluster_offset, size / 4, 0, true); // File for PJ64/mupen
+                          entto = init_dir_entry(++entries, name83vs, nameLongvs, cluster_offset, size / 4, 0, true, false); // File for PJ64/mupen
                         };
                       }
                       for (enti = 0; enti < entto; enti++) {
                         entries++;
                       }
                       if (gFramPresent != false) {
-                        entto = init_dir_entry(++entries, "DROM    FLA", "DROM.v64.fla", cluster_offset, size, 0, true); // File for DaisyDrive64
+                        entto = init_dir_entry(++entries, "DROM    FLA", "DROM.n64.fla", cluster_offset, size, 0, true, false); // File for DaisyDrive64
                         for (enti = 0; enti < entto; enti++) {
                           entries++;
                         }
@@ -633,11 +635,15 @@ int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void* buf,
                     cluster_offset += size / CLUSTER_SIZE;
                     size = (64 * 1024 * 1024);
                     assert(cluster_offset == (N64ROM_CLUSTER_START + 2));
-                    entto = init_dir_entry(++entries, "VROM    V64", "VROM.v64", cluster_offset, gRomSize, ATTR_READONLY, true); // Standard v64 format
+                    entto = init_dir_entry(++entries, "VROM    V64", "VROM.v64", cluster_offset, gRomSize, ATTR_READONLY, true, false); // Standard v64 format
                     for (enti = 0; enti < entto; enti++) {
                       entries++;
                     }
-                    entto = init_dir_entry(++entries, "DROM    V64", "DROM.v64", cluster_offset, gRomSize, ATTR_READONLY, true); // File for DaisyDrive64
+                    entto = init_dir_entry(++entries, "DROM    N64", "DROM.n64", cluster_offset, gRomSize, ATTR_READONLY, true, false); // File for DaisyDrive64
+                    for (enti = 0; enti < entto; enti++) {
+                      entries++;
+                    }
+                    entto = init_dir_entry(++entries, "SROM    V64", "SROM.v64", cluster_offset, gRomSize, ATTR_READONLY, true, false); // File for Summercart64
                     for (enti = 0; enti < entto; enti++) {
                       entries++;
                     }
@@ -645,11 +651,11 @@ int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void* buf,
                     cluster_offset += size / CLUSTER_SIZE;
                     size = (64 * 1024 * 1024);
                     assert(cluster_offset == (Z64ROM_CLUSTER_START + 2));
-                    entto = init_dir_entry(++entries, "ZROM    Z64", "ZROM.z64", cluster_offset, gRomSize, ATTR_READONLY, true); // Standard z64 format
+                    entto = init_dir_entry(++entries, "ZROM    Z64", "ZROM.z64", cluster_offset, gRomSize, ATTR_READONLY, true, false); // Standard z64 format
                     for (enti = 0; enti < entto; enti++) {
                       entries++;
                     }
-                    entto = init_dir_entry(++entries, "GROM    Z64", "GROM.z64", cluster_offset, gRomSize, ATTR_READONLY, true); // File for Gopher64/ED64
+                    entto = init_dir_entry(++entries, "GROM    Z64", "GROM.z64", cluster_offset, gRomSize, ATTR_READONLY, true, false); // File for Gopher64/ED64
                     for (enti = 0; enti < entto; enti++) {
                       entries++;
                     }
@@ -659,14 +665,14 @@ int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void* buf,
                     assert(cluster_offset == (FLASHRAMFLIP_CLUSTER_START + 2));
                     if ((gSRAMPresent != false) || (gFramPresent != false)) {
                       if (gFramPresent != false) {
-                        entto = init_dir_entry(++entries, "ZROM    FLA", "ZROM.flash", cluster_offset, size, 0, true); // File for Ares
+                        entto = init_dir_entry(++entries, "ZROM    FLA", "ZROM.flash", cluster_offset, size, 0, true, false); // File for Ares
                       } else {
                         char name83zr[] = "ZROM    RAM";
                         char nameLongzr[] = "ZROM.ram";
                         if (((gGameCode[1] >> 8) & 0xFF) == 0x44 && (gGameCode[1] & 0xFF) == 0x5A ) {
-                          entto = init_dir_entry(++entries, name83zr, nameLongzr, cluster_offset, size / 4 * 3, 0, true); // File for Ares
+                          entto = init_dir_entry(++entries, name83zr, nameLongzr, cluster_offset, size / 4 * 3, 0, true, false); // File for Ares
                         } else {
-                          entto = init_dir_entry(++entries, name83zr, nameLongzr, cluster_offset, size / 4, 0, true); // File for Ares
+                          entto = init_dir_entry(++entries, name83zr, nameLongzr, cluster_offset, size / 4, 0, true, false); // File for Ares
                         };
                       }
                       for (enti = 0; enti < entto; enti++) {
@@ -674,21 +680,37 @@ int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void* buf,
                       }
 
                       if (gFramPresent != false) {
-                        entto = init_dir_entry(++entries, "GROM    FLA", "GROM.fla", cluster_offset, size, 0, true); // File for Gopher64/ED64
+                        entto = init_dir_entry(++entries, "GROM    FLA", "GROM.fla", cluster_offset, size, 0, true, false); // File for Gopher64/ED64
                       } else {
                         char name83gs[] = "GROM    SRA";
                         char nameLonggs[] = "GROM.sra";
                         if (((gGameCode[1] >> 8) & 0xFF) == 0x44 && (gGameCode[1] & 0xFF) == 0x5A ) {
-                          entto = init_dir_entry(++entries, name83gs, nameLonggs, cluster_offset, size / 4 * 3, 0, true); // File for Gopher64/ED64
+                          entto = init_dir_entry(++entries, name83gs, nameLonggs, cluster_offset, size / 4 * 3, 0, true, false); // File for Gopher64/ED64
                         } else {
-                          entto = init_dir_entry(++entries, name83gs, nameLonggs, cluster_offset, size / 4, 0, true); // File for Gopher64/ED64
+                          entto = init_dir_entry(++entries, name83gs, nameLonggs, cluster_offset, size / 4, 0, true, false); // File for Gopher64/ED64
                         };
                       }
                       for (enti = 0; enti < entto; enti++) {
                         entries++;
                       }
+
+                      if (gFramPresent != false) {
+                        entto = init_dir_entry(++entries, "SROM    SAV", "SROM.sav", cluster_offset, size, 0, true, false); // File for Summercart64
+                      } else {
+                        char name83sc[] = "SROM    SAV";
+                        char nameLongsc[] = "SROM.sav";
+                        if (((gGameCode[1] >> 8) & 0xFF) == 0x44 && (gGameCode[1] & 0xFF) == 0x5A ) {
+                          entto = init_dir_entry(++entries, name83sc, nameLongsc, cluster_offset, size / 4 * 3, 0, true, false); // File for Summercart64
+                        } else {
+                          entto = init_dir_entry(++entries, name83sc, nameLongsc, cluster_offset, size / 4, 0, true, false); // File for Summercart64
+                        };
+                      }
+                      for (enti = 0; enti < entto; enti++) {
+                        entries++;
+                      }
+
                       if (gFramPresent == false) {
-                        entto = init_dir_entry(++entries, "DROM    FLA", "DROM.v64.fla", cluster_offset, size, 0, true); // File for DaisyDrive64, size is bigger
+                        entto = init_dir_entry(++entries, "DROM    FLA", "DROM.n64.fla", cluster_offset, size, 0, true, false); // File for DaisyDrive64, size is bigger
                         for (enti = 0; enti < entto; enti++) {
                           entries++;
                         }
@@ -699,11 +721,15 @@ int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void* buf,
                     size = 2 * 1024;
                     assert(cluster_offset == (EEPROMFLIP_CLUSTER_START + 2));
                     if (gEepromSize != 0) {
-                      entto = init_dir_entry(++entries, "ZROM    EEP", "ZROM.eeprom", cluster_offset, gEepromSize, 0, true); // File for Ares
+                      entto = init_dir_entry(++entries, "ZROM    EEP", "ZROM.eeprom", cluster_offset, gEepromSize, 0, true, false); // File for Ares
                       for (enti = 0; enti < entto; enti++) {
                         entries++;
                       }
-                      entto = init_dir_entry(++entries, "GROM    EEP", "GROM.eep", cluster_offset, gEepromSize, 0, true); // File for Gopher64/ED64
+                      entto = init_dir_entry(++entries, "GROM    EEP", "GROM.eep", cluster_offset, gEepromSize, 0, true, false); // File for Gopher64/ED64
+                      for (enti = 0; enti < entto; enti++) {
+                        entries++;
+                      }
+                      entto = init_dir_entry(++entries, "SROM    SAV", "SROM.sav", cluster_offset, gEepromSize, 0, true, false); // File for Summercart64
                       for (enti = 0; enti < entto; enti++) {
                         entries++;
                       }
@@ -713,7 +739,7 @@ int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void* buf,
                     size = 2 * 1024;
                     assert(cluster_offset == (CARTTEST_CLUSTER_START + 2));
                     // We only fill the first 1024 bytes with text
-                    entto = init_dir_entry(++entries, "CARTINFOTXT", "CartInfo.txt", cluster_offset, 1024, ATTR_READONLY, false);
+                    entto = init_dir_entry(++entries, "CARTINFOTXT", "CartInfo.txt", cluster_offset, 1024, ATTR_READONLY, false, false);
                     for (enti = 0; enti < entto; enti++) {
                       entries++;
                     }
@@ -757,7 +783,7 @@ int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void* buf,
                           CICString = NTSC;
                         }
                         int termfix = sprintf(buf,
-                        "Firmware MH20260619"
+                        "Firmware MH20260620"
                         "\n\nCart test report:\n\n"
                         "    EEPROM      - %s\n"
                         "    SRAM        - %s\n"
@@ -797,6 +823,7 @@ int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void* buf,
                           "Where the letter ? means:\n"
                           "D are files in daisydrive64 format.\n"
                           "G are files in gopher64/everdrive64 format.\n"
+                          "S are files in summercart64 format.\n"
                           "V are files in pj64/mupen64plus format.\n"
                           "Z are files in ares format.\n"
                           "\n\n\nCIC and EEPROM might need a fix to be read\n"
@@ -811,6 +838,7 @@ int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void* buf,
                           "Where the letter ? means:\n"
                           "D are files in daisydrive64 format.\n"
                           "G are files in gopher64/everdrive64 format.\n"
+                          "S are files in summercart64 format.\n"
                           "V are files in pj64/mupen64plus format.\n"
                           "Z are files in ares format.\n"
                           "\n\n\nTo write saves it is best to use the\n"
