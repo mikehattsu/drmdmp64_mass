@@ -11,6 +11,7 @@ This unofficial version currently produces:
 - .sra, .fla and .eep save files compatible with various pj64/mupen emulators.
 - .ram, .flash and .eeprom save files compatible with ares.
 - .sra, .fla and .eep save files compatible with gopher64 and everdrive64.
+- .sav save files compatible with summercart64.
 - .v64.fla and .v64.eep save files compatible with daisydrive64.
 - CartInfo.txt with a cart test report and info about what files to use with what emulator/flash cart.
 
