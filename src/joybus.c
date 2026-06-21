@@ -194,6 +194,7 @@ void __time_critical_func(ReadEepromData)(uint32_t offset, uint8_t *buffer)
 
 void __time_critical_func(WriteEepromData)(uint32_t offset, uint8_t *buffer)
 {
+    gpio_put(PICO_DEFAULT_LED_PIN, true);
     // Write the eeprom.
     for (uint32_t WriteIndex = 0; WriteIndex < 64; WriteIndex += 1) {
         // Construct the write command.
@@ -233,4 +234,5 @@ void __time_critical_func(WriteEepromData)(uint32_t offset, uint8_t *buffer)
 
         sleep_us(200);
     }
+    gpio_put(PICO_DEFAULT_LED_PIN, false);
 }

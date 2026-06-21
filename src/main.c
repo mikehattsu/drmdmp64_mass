@@ -1,5 +1,5 @@
 /**
- * SPX-License-Identifier: BSD-2-Clause 
+ * SPX-License-Identifier: BSD-2-Clause
  * Copyright (c) 2023 - NopJne
  */
 
@@ -17,7 +17,7 @@
 
 /* Blink pattern
  * - 250 ms  : device not mounted
- * - 1000 ms : device mounted
+ * - 1000 ms : device mounted - this now turns off the blinking
  * - 2500 ms : device is suspended
  */
 enum  {
@@ -136,6 +136,15 @@ void led_blinking_task(void)
 {
   static uint32_t start_ms = 0;
   static bool led_state = false;
+
+  // turn off led if we're mounted
+  if (blink_interval_ms == BLINK_MOUNTED) {
+    if (led_state) {
+      led_state = 1 - led_state;
+      board_led_write(led_state);
+    }
+    return;
+  }
 
   // Blink every interval ms
   if ( board_millis() - start_ms < blink_interval_ms) return; // not enough time

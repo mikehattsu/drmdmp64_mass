@@ -1,7 +1,7 @@
 /**
- * SPX-License-Identifier: BSD-2-Clause 
+ * SPX-License-Identifier: BSD-2-Clause
  * Copyright (c) 2023 - NopJne
- * 
+ *
  * N64CartInterface
  * Enables cartridge reading (0x1000'0000)
  * FlashRam/SRAM support     (0x0800'0000)
@@ -79,7 +79,6 @@ static uint32_t si_crc32(const uint8_t *data, size_t size) {
             for (k = 0; k < 8; k++) {
                 if (c & 1) {
                     c = 0xEDB88320L ^ (c >> 1);
-                    
                 } else {
                     c = c >> 1;
                 }
@@ -109,7 +108,7 @@ void cartio_init()
     // Roms do not read until COLD_RESET is pulled hi, atleast on the NUS3 carts with battery backed SRAM.
     gpio_init(N64_COLD_RESET);
     gpio_set_dir(N64_COLD_RESET, true);
-    gpio_put(N64_COLD_RESET, false); 
+    gpio_put(N64_COLD_RESET, false);
 
     // Indicate the initialization process through the onboard led.
     volatile int t = 0;
@@ -197,14 +196,30 @@ void cartio_init()
         sleep_ms(100);
     }
 
+    uint32_t read_321 = 0;
+    uint32_t read_322 = 0;
     for (uint32_t x = 4; x < 64; x += 4) {
-        // Check if the data at 16MB is a repeat of start.
+        // Check if the data at 4, 8, 12, 16MB etc. is a repeat of start.
         set_address(CART_ADDRESS_START + (x * 1024 * 1024));
         uint32_t readcheck = (((uint32_t)read16()) << 16) | (read16());
         // Check if the data at x is a repeat of start.
         if (read == readcheck) {
             gRomSize = x * 1024 * 1024;
             break;
+        }
+
+        //Check if data at 36, 40, 44, 48MB etc. is a repeat of 32.
+        if (x == 32) {
+          read_321 = readcheck;
+          read_322 = (((uint32_t)read16()) << 16) | (read16()); // Do 4 bytes extra read just in case the first 4 bytes matches by chance
+        }
+        else if (x > 32) {
+          if (read_321 == readcheck) {
+            if (read_322 == ((((uint32_t)read16()) << 16) | (read16()))) { //We only read the extra 4 bytes if the first 4 bytes matches
+              gRomSize = x * 1024 * 1024;
+              break;
+            }
+          }
         }
 
         // Check for an open bus. This means no hw is responding to the set address.
@@ -236,7 +251,7 @@ void cartio_init()
     readarr[0] = (((uint32_t)read16()) << 16) | (read16());
     readarr[1] = (((uint32_t)read16()) << 16) | (read16());
     gFlashType = (readarr[1] & 0xFF);
-    if ((readarr[0] == 0x11118001) && 
+    if ((readarr[0] == 0x11118001) &&
         (    (gFlashType == 0x1E)
           || (gFlashType == 0x1D)
           || (gFlashType == 0xF1)
@@ -366,18 +381,18 @@ void set_address(uint32_t address) {
     gpio_put(N64_READ, true);
     gpio_put(N64_ALEH, true);
 
-    // translate upper 16 bits to gpio 
+    // translate upper 16 bits to gpio
     uint16_t high16 = (uint16_t)(address >> 16);
     gpio_put_masked(address_pin_mask, high16);
 
     gpio_put(N64_ALEL, true);
     // Leave the high 16 bits on the line for at least this long
-    busy_wait_at_least_cycles(LATCH_DELAY_NS); 
-    
+    busy_wait_at_least_cycles(LATCH_DELAY_NS);
+
     // Set aleH low to send the lower 16 bits
     gpio_put(N64_ALEH, false);
-    
-    // now the lower 16 bits 
+
+    // now the lower 16 bits
     uint16_t low16 = (uint16_t)(address & 0xFFFF);
     gpio_put_masked(address_pin_mask, low16);
 
@@ -447,6 +462,7 @@ static void FlashRamEraseBlock128B(uint32_t offset)
 
 void FlashRamWrite512B(uint32_t address, unsigned char *buffer, bool flip)
 {
+    gpio_put(PICO_DEFAULT_LED_PIN, true);
     // FLashtype 0x1E devides the set read address by 2x.
     for (uint8_t x = 0; x < 4; x += 1) {
         uint32_t offset = address + (x * 128);
@@ -502,7 +518,7 @@ void FlashRamWrite512B(uint32_t address, unsigned char *buffer, bool flip)
             temp[0] = buffer[i + (x * 128)];
             temp[1] = buffer[i + (x * 128) + 1];
             temp[2] = temp[0] | temp[1] << 8;
-            
+
             if (flip != false) {
                 temp[2] = flip16((uint16_t)temp[2]);
             }
@@ -529,10 +545,12 @@ void FlashRamWrite512B(uint32_t address, unsigned char *buffer, bool flip)
             readarr[1] = (((uint32_t)read16()) << 16) | (read16());
         } while (readarr[0] != 0x11118001);
     }
+    gpio_put(PICO_DEFAULT_LED_PIN, false);
 }
 
 void SRAMWrite512B(uint32_t address, unsigned char *buffer, bool flip)
 {
+    gpio_put(PICO_DEFAULT_LED_PIN, true);
     set_address(address);
     busy_wait_at_least_cycles(READ_LOW_DELAY_NS * 2);
 
@@ -589,6 +607,7 @@ void SRAMWrite512B(uint32_t address, unsigned char *buffer, bool flip)
         write16((uint16_t)temp[2]);
         busy_wait_at_least_cycles(READ_LOW_DELAY_NS);
     }
+    gpio_put(PICO_DEFAULT_LED_PIN, false);
 }
 
 void FlashRamRead512B(uint32_t address, uint16_t *buffer, bool flip)
